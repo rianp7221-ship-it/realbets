@@ -1,8 +1,3 @@
-Para transformar o site de vez, incluí a Vitrine de Jogos (com a lógica de lista de partidas que criamos) diretamente dentro do seu código principal. Agora, quando você entrar na aba "Home", verá os confrontos em vez de um texto vazio.
-
-Copie e substitua todo o seu app/page.js por este código:
-
-JavaScript
 'use client';
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
