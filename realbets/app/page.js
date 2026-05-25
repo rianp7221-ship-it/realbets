@@ -1,3 +1,8 @@
+Perfeito! Aqui está o código completo e definitivo. Juntei a estrutura da Sidebar (Menu Lateral), o Dashboard, as funções de Depósito/Saque e a Lógica da Partida (Aposta) em um único arquivo.
+
+Basta copiar tudo e substituir o conteúdo do seu app/page.js:
+
+JavaScript
 'use client';
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
@@ -37,12 +42,13 @@ export default function RealBetsApp() {
 
   async function updateWallet(type) {
     const val = parseFloat(amount);
-    if (!val || val <= 0) return;
+    if (!val || val <= 0) return alert("Digite um valor válido");
     const newBalance = type === 'deposit' ? balance + val : balance - val;
     if (type === 'withdraw' && val > balance) return alert("Saldo insuficiente");
     await supabase.from('profiles').update({ wallet_balance: newBalance }).eq('id', user.id);
     setBalance(newBalance);
     setAmount('');
+    alert(type === 'deposit' ? "Depósito efetuado!" : "Saque efetuado!");
   }
 
   // TELA DE LOGIN
@@ -60,35 +66,37 @@ export default function RealBetsApp() {
   // LAYOUT LOGADO
   return (
     <div style={{ display: 'flex', background: '#121212', minHeight: '100vh', color: '#fff' }}>
-      {/* SIDEBAR */}
       <div style={{ width: '220px', background: '#1a1a1a', padding: '20px', borderRight: '1px solid #333' }}>
         <h2 style={{ color: '#ffcc00' }}>REALBETS</h2>
         <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
           {['home', 'games', 'wallet'].map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)} style={{ background: 'none', border: 'none', color: '#fff', textAlign: 'left', fontSize: '18px', cursor: 'pointer', textTransform: 'capitalize' }}>
-              {tab}
-            </button>
+            <button key={tab} onClick={() => setActiveTab(tab)} style={{ background: 'none', border: 'none', color: '#fff', textAlign: 'left', fontSize: '18px', cursor: 'pointer', textTransform: 'capitalize' }}>{tab}</button>
           ))}
           <button onClick={() => { supabase.auth.signOut(); window.location.reload(); }} style={{ marginTop: '20px', color: '#ff4444', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer' }}>Sair</button>
         </div>
       </div>
 
-      {/* CONTEÚDO */}
       <div style={{ flex: 1, padding: '40px' }}>
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', background: '#1f1f1f', padding: '15px', borderRadius: '8px' }}>
           <h3>Bem-vindo!</h3>
           <div style={{ background: '#333', padding: '10px 20px', borderRadius: '20px' }}>Saldo: R$ {balance.toFixed(2)}</div>
         </header>
 
-        {activeTab === 'home' && <div><h1>Bem-vindo ao RealBets</h1><p>Selecione um jogo no menu lateral para começar.</p></div>}
+        {activeTab === 'home' && <div><h1>Bem-vindo ao RealBets</h1><p>Selecione um jogo no menu lateral.</p></div>}
         
         {activeTab === 'games' && (
-          <div>
-            <h2>Jogos Populares</h2>
-            <div style={{ background: '#252525', padding: '20px', borderRadius: '10px', width: '200px', textAlign: 'center' }}>
-              <h4>Roleta da Sorte</h4>
-              <button onClick={() => alert("Jogo sendo carregado...")} style={{ background: '#ffcc00', padding: '10px 20px', border: 'none', cursor: 'pointer' }}>Jogar Agora</button>
-            </div>
+          <div style={{ background: '#252525', padding: '20px', borderRadius: '10px', width: '300px' }}>
+            <h4>Roleta da Sorte</h4>
+            <input type="number" placeholder="Valor da Aposta" onChange={(e) => setAmount(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '10px', color: '#000' }} />
+            <button onClick={async () => {
+                const val = parseFloat(amount);
+                if (val > balance) return alert("Saldo insuficiente!");
+                const win = Math.random() > 0.5;
+                const newBalance = win ? balance + val : balance - val;
+                await supabase.from('profiles').update({ wallet_balance: newBalance }).eq('id', user.id);
+                setBalance(newBalance);
+                alert(win ? "Você ganhou! 🎉" : "Você perdeu! 😢");
+            }} style={{ width: '100%', background: '#ffcc00', padding: '10px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Apostar Agora</button>
           </div>
         )}
 
@@ -97,8 +105,8 @@ export default function RealBetsApp() {
             <h2>Carteira</h2>
             <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Valor R$" style={{ padding: '10px', color: '#000' }} />
             <div style={{ marginTop: '10px' }}>
-              <button onClick={() => updateWallet('deposit')} style={{ background: '#28a745', padding: '10px 20px', border: 'none', marginRight: '10px' }}>Depositar</button>
-              <button onClick={() => updateWallet('withdraw')} style={{ background: '#dc3545', padding: '10px 20px', border: 'none' }}>Sacar</button>
+              <button onClick={() => updateWallet('deposit')} style={{ background: '#28a745', padding: '10px 20px', border: 'none', marginRight: '10px', cursor: 'pointer' }}>Depositar</button>
+              <button onClick={() => updateWallet('withdraw')} style={{ background: '#dc3545', padding: '10px 20px', border: 'none', cursor: 'pointer' }}>Sacar</button>
             </div>
           </div>
         )}
