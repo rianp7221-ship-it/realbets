@@ -4,65 +4,78 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
-export default function RealBetsHub() {
+export default function RealBets() {
   const [user, setUser] = useState(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLogin, setIsLogin] = useState(true);
   const [balance, setBalance] = useState(0);
-  const [betAmount, setBetAmount] = useState('');
-  const [activeTab, setActiveTab] = useState('home');
+  const [amount, setAmount] = useState('');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
         setUser(data.session.user);
-        loadData(data.session.user.id);
+        loadBalance(data.session.user.id);
       }
     });
   }, []);
 
-  async function loadData(userId) {
+  async function loadBalance(userId) {
     const { data } = await supabase.from('profiles').select('wallet_balance').eq('id', userId).single();
     if (data) setBalance(data.wallet_balance);
   }
 
-  async function placeBet() {
-    const amount = parseFloat(betAmount);
-    if (amount > balance) return alert("Saldo insuficiente!");
+  async function handleAuth(e) {
+    e.preventDefault();
+    const { error } = isLogin 
+      ? await supabase.auth.signInWithPassword({ email, password })
+      : await supabase.auth.signUp({ email, password });
     
-    // Lógica simples de sorteio: 50/50
-    const won = Math.random() > 0.5;
-    const newBalance = won ? balance + amount : balance - amount;
+    if (error) alert(error.message);
+    else window.location.reload();
+  }
+
+  async function updateBalance(type) {
+    const val = parseFloat(amount);
+    if (!val || val <= 0) return alert("Digite um valor válido");
+    
+    const newBalance = type === 'deposit' ? balance + val : balance - val;
+    if (type === 'withdraw' && val > balance) return alert("Saldo insuficiente");
 
     await supabase.from('profiles').update({ wallet_balance: newBalance }).eq('id', user.id);
     setBalance(newBalance);
-    alert(won ? "Parabéns! Você ganhou!" : "Que pena, você perdeu!");
+    setAmount('');
+    alert(type === 'deposit' ? "Depósito efetuado!" : "Saque efetuado!");
   }
 
-  if (!user) return <div style={{padding: 50, color: '#fff', textAlign: 'center'}}>Por favor, faça login para acessar o RealBets.</div>;
+  // TELA DE LOGIN
+  if (!user) return (
+    <div style={{ background: '#121212', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff' }}>
+      <form onSubmit={handleAuth} style={{ width: '300px', padding: '20px', background: '#1f1f1f', borderRadius: '10px' }}>
+        <h2>{isLogin ? 'LOGIN' : 'CADASTRO'}</h2>
+        <input type="email" placeholder="E-mail" onChange={(e) => setEmail(e.target.value)} style={{ width: '100%', marginBottom: '10px', padding: '8px', color: '#000' }} />
+        <input type="password" placeholder="Senha" onChange={(e) => setPassword(e.target.value)} style={{ width: '100%', marginBottom: '10px', padding: '8px', color: '#000' }} />
+        <button type="submit" style={{ width: '100%', padding: '10px', background: '#ffcc00', border: 'none', cursor: 'pointer' }}>{isLogin ? 'Entrar' : 'Criar Conta'}</button>
+        <p onClick={() => setIsLogin(!isLogin)} style={{ cursor: 'pointer', textAlign: 'center', marginTop: '10px' }}>{isLogin ? 'Cadastre-se' : 'Já tem conta?'}</p>
+      </form>
+    </div>
+  );
 
+  // TELA PRINCIPAL (DASHBOARD)
   return (
-    <div style={{ background: '#121212', minHeight: '100vh', color: '#fff', fontFamily: 'Arial' }}>
-      {/* Menu Superior */}
-      <nav style={{ padding: '20px', background: '#1f1f1f', display: 'flex', justifyContent: 'space-between' }}>
-        <h2>REALBETS</h2>
-        <div>
-          <button onClick={() => setActiveTab('home')}>Início</button>
-          <button onClick={() => setActiveTab('games')} style={{marginLeft: 10}}>Jogar</button>
-          <button onClick={() => {supabase.auth.signOut(); window.location.reload();}} style={{marginLeft: 10, color: 'red'}}>Sair</button>
+    <div style={{ background: '#121212', minHeight: '100vh', color: '#fff', padding: '20px' }}>
+      <h1>REALBETS</h1>
+      <div style={{ background: '#1f1f1f', padding: '20px', borderRadius: '10px' }}>
+        <h3>Saldo: R$ {balance.toFixed(2)}</h3>
+        <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Valor (R$)" style={{ padding: '8px', color: '#000' }} />
+        
+        <div style={{ marginTop: '10px' }}>
+          <button onClick={() => updateBalance('deposit')} style={{ background: '#28a745', border: 'none', padding: '10px', marginRight: '10px', cursor: 'pointer' }}>Depositar</button>
+          <button onClick={() => updateBalance('withdraw')} style={{ background: '#dc3545', border: 'none', padding: '10px', cursor: 'pointer' }}>Sacar</button>
         </div>
-      </nav>
-
-      {/* Conteúdo Principal */}
-      <div style={{ padding: '20px' }}>
-        <h3>Seu Saldo: R$ {balance.toFixed(2)}</h3>
-
-        {activeTab === 'games' && (
-          <div style={{ background: '#252525', padding: '20px', borderRadius: '10px' }}>
-            <h4>Roleta da Sorte (50/50)</h4>
-            <input type="number" placeholder="Valor da aposta" onChange={(e) => setBetAmount(e.target.value)} style={{padding: 10}} />
-            <button onClick={placeBet} style={{padding: '10px 20px', background: '#ffcc00', border: 'none', cursor: 'pointer', marginLeft: 10 }}>Apostar</button>
-          </div>
-        )}
       </div>
+      <button onClick={() => { supabase.auth.signOut(); window.location.reload(); }} style={{ marginTop: '20px', padding: '10px', background: '#555', color: '#fff', border: 'none', cursor: 'pointer' }}>Sair</button>
     </div>
   );
 }
