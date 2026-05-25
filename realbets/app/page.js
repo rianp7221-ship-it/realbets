@@ -1,9 +1,4 @@
-Perfeito! Aqui está o código completo e definitivo. Juntei a estrutura da Sidebar (Menu Lateral), o Dashboard, as funções de Depósito/Saque e a Lógica da Partida (Aposta) em um único arquivo.
-
-Basta copiar tudo e substituir o conteúdo do seu app/page.js:
-
-JavaScript
-'use client';
+P'use client';
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
