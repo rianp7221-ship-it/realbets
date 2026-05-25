@@ -2,15 +2,18 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-// Inicialização segura que evita erro de build
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-  // Carrega usuário do Supabase
+export default function Home() {
+  const [view, setView] = useState('home');
+  const [user, setUser] = useState(null);
+  const [saldo, setSaldo] = useState(0);
+
   useEffect(() => {
-    async function load() {
+    async function loadData() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setUser(session.user);
@@ -18,8 +21,16 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
         if (data) setSaldo(data.wallet_balance);
       }
     }
-    load();
+    loadData();
   }, []);
+
+  return (
+    <div style={{ background: '#1a1a1a', color: '#fff', minHeight: '100vh', padding: '20px' }}>
+      <h1>REALBETS</h1>
+      <p>Saldo: R$ {saldo.toFixed(2)}</p>
+    </div>
+  );
+}
 
   // --- SEÇÃO DE ADMIN (TELAS SEPARADAS) ---
   if (view === 'admin') return (
