@@ -1,48 +1,50 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
-// Inicialização segura
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { useState } from 'react';
 
 export default function Page() {
-  const [user, setUser] = useState(null);
-  const [balance, setBalance] = useState(0);
+  const [activeTab, setActiveTab] = useState('home');
 
-  useEffect(() => {
-    async function loadSession() {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        setUser(data.session.user);
-        
-        // Busca o saldo de forma separada para evitar erro de promise
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('wallet_balance')
-          .eq('id', data.session.user.id)
-          .single();
-        
-        if (profile) {
-          setBalance(profile.wallet_balance);
-        }
-      }
-    }
-    loadSession();
-  }, []);
-
-  if (!user) {
-    return <div style={{ color: 'white', padding: '50px' }}>Você não está logado.</div>;
-  }
+  const menuItems = ['home', 'games', 'wallet'];
 
   return (
-    <div style={{ color: 'white', padding: '50px', background: '#121212', minHeight: '100vh' }}>
-      <h1>Dashboard RealBets</h1>
-      <p>Email: {user.email}</p>
-      <div style={{ background: '#333', padding: '20px', borderRadius: '10px', marginTop: '20px' }}>
-        <h3>Saldo Atual: R$ {balance.toFixed(2)}</h3>
-      </div>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#121212', color: '#fff', fontFamily: 'sans-serif' }}>
+      {/* Sidebar Fixo */}
+      <nav style={{ width: '220px', background: '#1a1a1a', padding: '20px', borderRight: '1px solid #333' }}>
+        <h2 style={{ color: '#ffcc00', marginBottom: '40px' }}>REALBETS</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {menuItems.map((item) => (
+            <button 
+              key={item}
+              onClick={() => setActiveTab(item)}
+              style={{ 
+                background: activeTab === item ? '#333' : 'transparent',
+                border: 'none', 
+                color: '#fff', 
+                padding: '10px', 
+                textAlign: 'left', 
+                cursor: 'pointer',
+                borderRadius: '5px',
+                textTransform: 'capitalize'
+              }}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      {/* Área de Conteúdo */}
+      <main style={{ flex: 1, padding: '40px' }}>
+        <header style={{ marginBottom: '30px' }}>
+          <h1>{activeTab.toUpperCase()}</h1>
+        </header>
+
+        <section style={{ background: '#1f1f1f', padding: '20px', borderRadius: '10px' }}>
+          {activeTab === 'home' && <p>Bem-vindo ao RealBets. Escolha uma opção no menu.</p>}
+          {activeTab === 'games' && <p>Carregando jogos...</p>}
+          {activeTab === 'wallet' && <p>Configurações da carteira.</p>}
+        </section>
+      </main>
     </div>
   );
 }
