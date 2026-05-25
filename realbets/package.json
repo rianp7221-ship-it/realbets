@@ -5,10 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "lint": "next lint"
   },
-"dependencies": {
-    "next": "14.x.x",
+  "dependencies": {
+    "next": "14.2.3",
     "react": "^18",
-    "react-dom": "^18"
-  },
+    "react-dom": "^18",
+    "@supabase/supabase-js": "^2.43.2"
+  }
+}
