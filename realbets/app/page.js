@@ -1,146 +1,117 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
 
-/**
- * PROJETO: REALBETS - VERSÃO 1.0 (ARQUITETURA PROFISSIONAL)
- * Este arquivo centraliza a lógica, o layout e o roteamento.
- */
-
-// 1. COMPONENTE DE CABEÇALHO (HEADER)
-const Header = ({ setMenuOpen, setView, setUserSession, userSession }) => (
-  <header style={{ 
-    background: '#005a42', 
-    padding: '15px 20px', 
-    display: 'flex', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    borderBottom: '3px solid #ffdf1b', 
-    position: 'sticky', 
-    top: 0, 
-    zIndex: 100 
-  }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-      <button 
-        onClick={() => setMenuOpen(prev => !prev)} 
-        style={{ background: 'none', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer' }}>
-        ☰
-      </button>
-      <h1 
-        style={{ margin: 0, fontSize: '24px', cursor: 'pointer', color: '#fff' }} 
-        onClick={() => setView('home')}>
-        REAL<span style={{ color: '#ffdf1b' }}>BETS</span>
-      </h1>
-    </div>
-    <div style={{ display: 'flex', gap: '10px' }}>
-      {userSession === 'admin' && (
-        <button 
-          onClick={() => setView('admin')} 
-          style={{ background: '#ffdf1b', border: 'none', padding: '8px 15px', fontWeight: 'bold', cursor: 'pointer' }}>
-          PAINEL ADMIN
-        </button>
-      )}
-      <button 
-        onClick={() => setView('login')} 
-        style={{ background: 'transparent', border: '1px solid #fff', color: '#fff', padding: '8px 15px', cursor: 'pointer' }}>
-        {userSession ? 'Perfil' : 'Login'}
-      </button>
-    </div>
-  </header>
-);
-
-// 2. COMPONENTE DE MENU LATERAL (SIDEBAR)
-const SideMenu = ({ menuOpen, setMenuOpen }) => (
-  <nav style={{ 
-    position: 'fixed', 
-    left: menuOpen ? 0 : '-280px', 
-    top: '70px', 
-    width: '280px', 
-    height: '100%', 
-    background: '#222', 
-    transition: '0.4s ease', 
-    padding: '20px', 
-    zIndex: 99, 
-    borderRight: '1px solid #333' 
-  }}>
-    {['Futebol', 'Basquete', 'Tênis', 'Cassino Ao Vivo', 'E-Sports', 'Promoções', 'Suporte ao Cliente', 'Termos de Uso'].map((item) => (
-      <div key={item} style={{ 
-        padding: '15px', 
-        borderBottom: '1px solid #333', 
-        color: '#ccc', 
-        cursor: 'pointer',
-        fontSize: '15px'
-      }}>
-        {item}
-      </div>
-    ))}
-  </nav>
+// Inicialização da Conexão com Banco de Dados
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
 export default function Home() {
   const [view, setView] = useState('home');
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [userSession, setUserSession] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(true);
+  const [user, setUser] = useState(null);
+  const [saldo, setSaldo] = useState(0);
+  const [activeTab, setActiveTab] = useState('live');
 
-  // 3. LOGICA DO PAINEL ADMINISTRATIVO
-  if (view === 'admin') {
-    return (
-      <div style={{ background: '#0f0f0f', color: '#fff', minHeight: '100vh', padding: '40px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
-          <h1>⚙️ DASHBOARD ADMINISTRATIVO</h1>
-          <button onClick={() => setView('home')} style={{ background: '#c00', border: 'none', padding: '10px 25px', color: '#fff', cursor: 'pointer' }}>VOLTAR AO SITE</button>
+  // --- ESTRUTURA DE DADOS DE EXEMPLO (Para parecer um site real) ---
+  const sports = ['Futebol', 'Basquete', 'Tênis', 'E-Sports', 'Cassino', 'Fórmula 1', 'Boxe', 'Ciclismo'];
+  const liveGames = [
+    { id: 1, liga: 'La Liga', casa: 'Real Madrid', fora: 'Barcelona', odd1: 2.10, oddX: 3.40, odd2: 3.20 },
+    { id: 2, liga: 'Premier League', casa: 'Man City', fora: 'Liverpool', odd1: 1.85, oddX: 3.80, odd2: 4.10 }
+  ];
+
+  // Carrega usuário do Supabase
+  useEffect(() => {
+    async function load() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setUser(session.user);
+        const { data } = await supabase.from('profiles').select('wallet_balance').eq('id', session.user.id).single();
+        if (data) setSaldo(data.wallet_balance);
+      }
+    }
+    load();
+  }, []);
+
+  // --- SEÇÃO DE ADMIN (TELAS SEPARADAS) ---
+  if (view === 'admin') return (
+    <div style={{ background: '#0f0f0f', color: '#fff', minHeight: '100vh', padding: '30px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #333', paddingBottom: '20px' }}>
+        <h1>⚙️ PAINEL DE CONTROLE REALBETS</h1>
+        <button onClick={() => setView('home')} style={{ background: '#c00', border: 'none', padding: '10px 20px', color: '#fff', cursor: 'pointer' }}>SAIR DO ADMIN</button>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginTop: '30px' }}>
+        {[ 'Usuários', 'Gerenciar Odds', 'Finanças', 'Depósitos', 'Logs de Sistema', 'Configuração API', 'Bônus', 'Suporte' ].map(item => (
+          <div key={item} style={{ background: '#222', padding: '40px', borderRadius: '8px', border: '1px solid #444', textAlign: 'center' }}>
+            <h3>{item}</h3>
+            <button style={{ marginTop: '10px', background: '#005a42', border: 'none', padding: '8px 16px', color: '#fff' }}>Acessar</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // --- INTERFACE PRINCIPAL ---
+  return (
+    <div style={{ background: '#1a1a1a', color: '#fff', minHeight: '100vh', fontFamily: 'Arial, sans-serif' }}>
+      {/* HEADER PROFISSIONAL */}
+      <header style={{ background: '#005a42', padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '4px solid #ffdf1b', position: 'sticky', top: 0, zIndex: 100 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <button onClick={() => setMenuOpen(!menuOpen)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '28px', cursor: 'pointer' }}>☰</button>
+          <h1 style={{ margin: 0, fontSize: '26px', color: '#fff', cursor: 'pointer' }} onClick={() => setView('home')}>REAL<span style={{ color: '#ffdf1b' }}>BETS</span></h1>
         </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-          {[
-            { title: 'Usuários Ativos', val: '1,240' },
-            { title: 'Volume de Apostas', val: 'R$ 45.200,00' },
-            { title: 'Gerenciar Odds', val: 'Configurar' },
-            { title: 'API de Resultados', val: 'Conectado' },
-            { title: 'Depósitos Pendentes', val: '12' },
-            { title: 'Relatórios Financeiros', val: 'Download' }
-          ].map((card) => (
-            <div key={card.title} style={{ background: '#1a1a1a', padding: '30px', borderRadius: '8px', border: '1px solid #333' }}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#ffdf1b' }}>{card.title}</h3>
-              <p style={{ fontSize: '24px', fontWeight: 'bold' }}>{card.val}</p>
+        <div style={{ display: 'flex', gap: '15px' }}>
+          {user ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+              <div style={{ background: '#003b2b', padding: '8px 15px', borderRadius: '5px', border: '1px solid #ffdf1b' }}>SALDO: R$ {saldo.toFixed(2)}</div>
+              <button onClick={() => setView('admin')} style={{ background: '#ffdf1b', border: 'none', padding: '8px 15px', fontWeight: 'bold' }}>ADMIN</button>
+            </div>
+          ) : (
+            <button onClick={() => setView('login')} style={{ background: '#ffdf1b', border: 'none', padding: '8px 20px', fontWeight: 'bold' }}>ENTRAR</button>
+          )}
+        </div>
+      </header>
+
+      {/* LAYOUT DE COLUNAS */}
+      <div style={{ display: 'flex', marginTop: '5px' }}>
+        {/* MENU LATERAL */}
+        {menuOpen && (
+          <nav style={{ width: '250px', background: '#222', minHeight: '90vh', padding: '20px', borderRight: '1px solid #333' }}>
+            <h4 style={{ color: '#ffdf1b' }}>ESPORTES</h4>
+            {sports.map(s => <div key={s} style={{ padding: '12px 0', borderBottom: '1px solid #333', cursor: 'pointer' }}>{s}</div>)}
+          </nav>
+        )}
+
+        {/* CONTEÚDO CENTRAL */}
+        <main style={{ flex: 1, padding: '20px' }}>
+          <div style={{ display: 'flex', background: '#333', borderRadius: '4px', marginBottom: '20px' }}>
+            {['live', 'scheduled', 'results'].map(tab => (
+              <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: 1, padding: '15px', background: activeTab === tab ? '#005a42' : 'transparent', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                {tab.toUpperCase()}
+              </button>
+            ))}
+          </div>
+
+          {liveGames.map(game => (
+            <div key={game.id} style={{ background: '#242424', padding: '15px', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div><small>{game.liga}</small><div>{game.casa} vs {game.fora}</div></div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                {[game.odd1, game.oddX, game.odd2].map((odd, i) => (
+                  <button key={i} style={{ padding: '10px 20px', background: '#333', border: '1px solid #555', color: '#ffdf1b' }}>{odd}</button>
+                ))}
+              </div>
             </div>
           ))}
-        </div>
+        </main>
+
+        {/* COLUNA DIREITA (CUPOM) */}
+        <aside style={{ width: '300px', background: '#222', padding: '20px', borderLeft: '1px solid #333' }}>
+          <h3>CUPOM DE APOSTA</h3>
+          <p style={{ color: '#777' }}>Selecione um evento para apostar.</p>
+        </aside>
       </div>
-    );
-  }
-
-  // 4. INTERFACE PRINCIPAL
-  return (
-    <div style={{ background: '#1a1a1a', color: '#fff', minHeight: '100vh', fontFamily: 'sans-serif' }}>
-      <Header setMenuOpen={setMenuOpen} setView={setView} setUserSession={setUserSession} userSession={userSession} />
-      <SideMenu menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
-      
-      <main style={{ maxWidth: '1200px', margin: '20px auto', padding: '20px' }}>
-        {view === 'login' ? (
-          <div style={{ textAlign: 'center', background: '#222', padding: '60px', borderRadius: '10px', maxWidth: '400px', margin: '50px auto', border: '1px solid #333' }}>
-            <h2 style={{ marginBottom: '30px' }}>Acesso à Conta</h2>
-            <input id="user" placeholder="Usuário (admin)" style={{ width: '100%', padding: '12px', marginBottom: '15px', background: '#000', border: '1px solid #444', color: '#fff' }} />
-            <input type="password" placeholder="Senha" style={{ width: '100%', padding: '12px', marginBottom: '25px', background: '#000', border: '1px solid #444', color: '#fff' }} />
-            <button onClick={() => {
-              const u = document.getElementById('user').value;
-              if(u === 'admin') setUserSession('admin');
-              else setUserSession('user');
-              setView('home');
-            }} style={{ width: '100%', padding: '15px', background: '#12c156', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>ENTRAR</button>
-          </div>
-        ) : (
-          <div>
-            <div style={{ background: '#003b2b', padding: '40px', textAlign: 'center', marginBottom: '30px', borderRadius: '8px', border: '1px solid #ffdf1b' }}>
-              <h2 style={{ margin: 0 }}>BÔNUS DE 100% NO PRIMEIRO DEPÓSITO</h2>
-              <p style={{ margin: '10px 0 0' }}>Cadastre-se agora e dobre suas chances!</p>
-            </div>
-
-            <div style={{ background: '#242424', padding: '60px', textAlign: 'center', border: '1px solid #333', borderRadius: '8px' }}>
-              <p style={{ color: '#aaa', fontSize: '18px' }}>Carregando eventos esportivos do dia...</p>
-            </div>
-          </div>
-        )}
-      </main>
     </div>
   );
 }
