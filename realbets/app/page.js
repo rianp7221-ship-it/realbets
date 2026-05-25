@@ -7,56 +7,40 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
-export default function Home() {
-  const [saldo, setSaldo] = useState(0);
-  const [userId, setUserId] = useState(null);
-  const [valorDeposito, setValorDeposito] = useState('');
+export default function AuthPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLogin, setIsLogin] = useState(true);
 
-  useEffect(() => {
-    async function carregarDados() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUserId(user.id);
-        const { data } = await supabase.from('profiles').select('wallet_balance').eq('id', user.id).single();
-        if (data) setSaldo(data.wallet_balance);
-      }
-    }
-    carregarDados();
-  }, []);
-
-  const handleDepositoReal = async () => {
-    if (!userId) return alert("Você precisa estar logado!");
-    const valor = parseFloat(valorDeposito);
-    
-    // Atualiza o saldo no banco de dados (SOMA o valor atual + o novo depósito)
-    const { error } = await supabase
-      .from('profiles')
-      .update({ wallet_balance: saldo + valor })
-      .eq('id', userId);
-
-    if (!error) {
-      setSaldo(saldo + valor);
-      alert('Depósito realizado com sucesso!');
+  const handleAuth = async (e) => {
+    e.preventDefault();
+    if (isLogin) {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) alert(error.message);
+      else window.location.reload();
     } else {
-      alert('Erro ao depositar: ' + error.message);
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) alert(error.message);
+      else {
+        alert("Conta criada com sucesso! Você já pode logar.");
+        setIsLogin(true);
+      }
     }
   };
 
   return (
-    <div style={{ background: '#121212', minHeight: '100vh', color: '#fff', padding: '20px' }}>
-      <h1>REALBETS - Saldo: R$ {saldo.toFixed(2)}</h1>
-      <div style={{ marginTop: '20px', background: '#222', padding: '20px', width: '250px' }}>
-        <input 
-          type="number" 
-          placeholder="Valor do Depósito (R$)" 
-          value={valorDeposito}
-          onChange={(e) => setValorDeposito(e.target.value)}
-          style={{ width: '100%', padding: '10px', marginBottom: '10px' }}
-        />
-        <button onClick={handleDepositoReal} style={{ width: '100%', background: '#ffcc00', padding: '10px', cursor: 'pointer' }}>
-          Depositar Agora
+    <div style={{ background: '#121212', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff' }}>
+      <form onSubmit={handleAuth} style={{ background: '#1f1f1f', padding: '30px', borderRadius: '8px', width: '300px' }}>
+        <h2 style={{ textAlign: 'center', color: '#ffcc00' }}>{isLogin ? 'LOGIN' : 'CADASTRO'}</h2>
+        <input type="email" placeholder="E-mail" onChange={(e) => setEmail(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
+        <input type="password" placeholder="Senha" onChange={(e) => setPassword(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
+        <button type="submit" style={{ width: '100%', background: '#ffcc00', padding: '10px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
+          {isLogin ? 'Entrar' : 'Criar Conta'}
         </button>
-      </div>
+        <p onClick={() => setIsLogin(!isLogin)} style={{ textAlign: 'center', cursor: 'pointer', fontSize: '12px', marginTop: '15px', color: '#888' }}>
+          {isLogin ? 'Não tem conta? Cadastre-se' : 'Já tem conta? Faça login'}
+        </p>
+      </form>
     </div>
   );
 }
