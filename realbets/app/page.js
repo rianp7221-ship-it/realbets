@@ -1,12 +1,10 @@
-'use client';
-import { useState, useEffect } from 'react';
+// Correção da inicialização segura
 import { createClient } from '@supabase/supabase-js';
 
-// Inicialização da Conexão com Banco de Dados
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function Home() {
   const [view, setView] = useState('home');
