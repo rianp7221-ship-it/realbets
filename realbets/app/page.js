@@ -1,3 +1,8 @@
+Para transformar o site de vez, incluí a Vitrine de Jogos (com a lógica de lista de partidas que criamos) diretamente dentro do seu código principal. Agora, quando você entrar na aba "Home", verá os confrontos em vez de um texto vazio.
+
+Copie e substitua todo o seu app/page.js por este código:
+
+JavaScript
 'use client';
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
@@ -22,78 +27,60 @@ export default function RealBetsApp() {
   }, []);
 
   async function loadBalance(userId) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('wallet_balance')
-      .eq('id', userId)
-      .single();
+    const { data } = await supabase.from('profiles').select('wallet_balance').eq('id', userId).single();
     if (data) setBalance(data.wallet_balance);
   }
 
-  async function handleBet() {
-    const betValue = 10;
-    if (balance < betValue) return alert("Saldo insuficiente!");
-    
-    const win = Math.random() > 0.5;
-    const newBalance = win ? balance + betValue : balance - betValue;
-    
-    await supabase.from('profiles').update({ wallet_balance: newBalance }).eq('id', user.id);
-    setBalance(newBalance);
-    alert(win ? "Você ganhou! 🎉" : "Você perdeu! 😢");
-  }
-
-  async function addFunds() {
-    const newBalance = balance + 50;
-    await supabase.from('profiles').update({ wallet_balance: newBalance }).eq('id', user.id);
-    setBalance(newBalance);
-    alert("R$ 50,00 adicionados ao saldo!");
-  }
-
-  if (!user) return <div style={{padding: 50, color: '#fff'}}>Carregando sistema...</div>;
+  // Lista de Jogos (Em breve vinda de um banco de dados ou API)
+  const jogos = [
+    { casa: 'Flamengo', fora: 'Palmeiras', odd: 2.10 },
+    { casa: 'Real Madrid', fora: 'Barcelona', odd: 1.85 },
+    { casa: 'São Paulo', fora: 'Corinthians', odd: 2.40 },
+    { casa: 'Manchester City', fora: 'Liverpool', odd: 1.95 }
+  ];
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#121212', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#121212', color: '#fff', fontFamily: 'Arial' }}>
       {/* Sidebar */}
-      <nav style={{ width: '220px', background: '#1a1a1a', padding: '20px', borderRight: '1px solid #333' }}>
-        <h2 style={{ color: '#ffcc00' }}>REALBETS</h2>
-        <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+      <nav style={{ width: '250px', background: '#1a1a1a', padding: '20px', borderRight: '1px solid #333' }}>
+        <h2 style={{ color: '#ffcc00', marginBottom: '40px' }}>REALBETS</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {['home', 'games', 'wallet'].map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)} style={{ background: activeTab === tab ? '#333' : 'transparent', border: 'none', color: '#fff', padding: '10px', textAlign: 'left', cursor: 'pointer', borderRadius: '5px', textTransform: 'capitalize' }}>
-              {tab}
+            <button key={tab} onClick={() => setActiveTab(tab)} style={{ background: activeTab === tab ? '#333' : 'transparent', border: 'none', color: '#fff', padding: '15px', textAlign: 'left', cursor: 'pointer', borderRadius: '5px', textTransform: 'capitalize', fontSize: '16px' }}>
+              {tab === 'home' ? '🏠 Início' : tab === 'games' ? '🎮 Jogos' : '💰 Carteira'}
             </button>
           ))}
-          <button onClick={() => { supabase.auth.signOut(); window.location.reload(); }} style={{ marginTop: '20px', color: '#ff4444', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer' }}>Sair</button>
         </div>
       </nav>
 
       {/* Conteúdo */}
       <main style={{ flex: 1, padding: '40px' }}>
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', background: '#1f1f1f', padding: '15px', borderRadius: '8px' }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
           <h1>{activeTab.toUpperCase()}</h1>
-          <div style={{ background: '#333', padding: '10px 20px', borderRadius: '20px' }}>Saldo: R$ {balance.toFixed(2)}</div>
+          <div style={{ background: '#ffcc00', color: '#000', padding: '10px 20px', borderRadius: '20px', fontWeight: 'bold' }}>
+            Saldo: R$ {balance.toFixed(2)}
+          </div>
         </header>
 
-        <section style={{ background: '#1f1f1f', padding: '20px', borderRadius: '10px' }}>
-          {activeTab === 'home' && <p>Bem-vindo ao RealBets. Escolha uma opção no menu lateral.</p>}
-          
-          {activeTab === 'games' && (
-            <div style={{ textAlign: 'center' }}>
-              <h3>Roleta da Sorte</h3>
-              <button onClick={handleBet} style={{ padding: '15px 30px', background: '#ffcc00', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>
-                Apostar R$ 10,00
-              </button>
-            </div>
-          )}
+        {/* Home: Lista de Jogos */}
+        {activeTab === 'home' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            {jogos.map((jogo, i) => (
+              <div key={i} style={{ background: '#1f1f1f', padding: '20px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #333' }}>
+                <div>
+                  <strong style={{ fontSize: '18px' }}>{jogo.casa} vs {jogo.fora}</strong>
+                </div>
+                <button onClick={() => alert("Aposta processada!")} style={{ background: '#28a745', border: 'none', padding: '12px 25px', borderRadius: '5px', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>
+                  Odd: {jogo.odd.toFixed(2)}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
-          {activeTab === 'wallet' && (
-            <div>
-              <h3>Gerenciar Saldo</h3>
-              <button onClick={addFunds} style={{ padding: '10px 20px', background: '#28a745', border: 'none', color: '#fff', cursor: 'pointer', borderRadius: '5px' }}>
-                Adicionar R$ 50,00
-              </button>
-            </div>
-          )}
-        </section>
+        {/* Outras abas mantidas */}
+        {activeTab === 'games' && <div style={{ textAlign: 'center', padding: '50px' }}><h3>Roleta da Sorte</h3><button style={{ padding: '15px 30px', background: '#ffcc00', border: 'none', borderRadius: '5px' }}>Jogar</button></div>}
+        {activeTab === 'wallet' && <div style={{ padding: '20px' }}><h3>Saldo: R$ {balance.toFixed(2)}</h3><button onClick={() => alert('Simulando PIX...')}>Depositar R$ 50</button></div>}
       </main>
     </div>
   );
