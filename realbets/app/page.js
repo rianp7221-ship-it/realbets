@@ -1,24 +1,12 @@
-// Correção da inicialização segura
+'use client';
+import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// Inicialização segura que evita erro de build
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-export default function Home() {
-  const [view, setView] = useState('home');
-  const [menuOpen, setMenuOpen] = useState(true);
-  const [user, setUser] = useState(null);
-  const [saldo, setSaldo] = useState(0);
-  const [activeTab, setActiveTab] = useState('live');
-
-  // --- ESTRUTURA DE DADOS DE EXEMPLO (Para parecer um site real) ---
-  const sports = ['Futebol', 'Basquete', 'Tênis', 'E-Sports', 'Cassino', 'Fórmula 1', 'Boxe', 'Ciclismo'];
-  const liveGames = [
-    { id: 1, liga: 'La Liga', casa: 'Real Madrid', fora: 'Barcelona', odd1: 2.10, oddX: 3.40, odd2: 3.20 },
-    { id: 2, liga: 'Premier League', casa: 'Man City', fora: 'Liverpool', odd1: 1.85, oddX: 3.80, odd2: 4.10 }
-  ];
 
   // Carrega usuário do Supabase
   useEffect(() => {
