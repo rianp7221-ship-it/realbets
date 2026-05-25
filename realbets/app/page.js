@@ -1,27 +1,46 @@
-'use client';
+'use client'; // Esta linha é obrigatória para evitar o erro de servidor
+
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-// Configuração vazia para evitar erro de build inicial
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://none.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'none';
-
+// Configuração segura para evitar erros durante o build
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function Home() {
-  const [loading, setLoading] = useState(true);
+  const [saldo, setSaldo] = useState(0);
+  const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
-    // Isso garante que o código SÓ rode no navegador, nunca no servidor
-    setLoading(false);
+    // Usamos o useEffect para garantir que a consulta ao banco só ocorra no navegador
+    async function buscarSaldo() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data } = await supabase.from('profiles').select('wallet_balance').eq('id', user.id).single();
+          if (data) setSaldo(data.wallet_balance);
+        }
+      } catch (err) {
+        console.error("Erro ao buscar dados:", err);
+      } finally {
+        setCarregando(false);
+      }
+    }
+    buscarSaldo();
   }, []);
-
-  if (loading) return <div style={{ color: '#fff', textAlign: 'center', marginTop: '50px' }}>Carregando...</div>;
 
   return (
     <div style={{ background: '#000', color: '#fff', minHeight: '100vh', padding: '20px' }}>
-      <h1>SITE ONLINE</h1>
-      <p>O sistema foi carregado com sucesso no seu navegador.</p>
+      <h1>REALBETS STATUS</h1>
+      {carregando ? (
+        <p>Conectando ao banco de dados...</p>
+      ) : (
+        <div>
+          <p>O site está rodando com sucesso!</p>
+          <p>Saldo do usuário logado: <strong>R$ {saldo.toFixed(2)}</strong></p>
+        </div>
+      )}
     </div>
   );
 }
