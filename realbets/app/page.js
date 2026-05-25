@@ -1,4 +1,6 @@
-export default function RealSportsBet() {
+"use client";
+
+export default function Page() {
   const games = [
     {
       league: 'Champions League',
